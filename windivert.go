@@ -16,7 +16,7 @@ var (
 	winDivertSend                *syscall.LazyProc
 	winDivertHelperCalcChecksums *syscall.LazyProc
 	winDivertHelperEvalFilter    *syscall.LazyProc
-	winDivertHelperCheckFilter   *syscall.LazyProc
+	winDivertHelperCompileFilter *syscall.LazyProc
 )
 
 func init() {
@@ -48,7 +48,7 @@ func LoadDLL(path64, path32 string) {
 	winDivertSend = winDivertDLL.NewProc("WinDivertSend")
 	winDivertHelperCalcChecksums = winDivertDLL.NewProc("WinDivertHelperCalcChecksums")
 	winDivertHelperEvalFilter = winDivertDLL.NewProc("WinDivertHelperEvalFilter")
-	winDivertHelperCheckFilter = winDivertDLL.NewProc("WinDivertHelperCheckFilter")
+	winDivertHelperCompileFilter = winDivertDLL.NewProc("WinDivertHelperCompileFilter")
 }
 
 // Create a new WinDivertHandle by calling WinDivertOpen and returns it
@@ -106,8 +106,8 @@ func (wd *WinDivertHandle) Recv() (*Packet, error) {
 	success, _, err := winDivertRecv.Call(wd.handle,
 		uintptr(unsafe.Pointer(&packetBuffer[0])),
 		uintptr(PacketBufferSize),
-		uintptr(unsafe.Pointer(&addr)),
-		uintptr(unsafe.Pointer(&packetLen)))
+		uintptr(unsafe.Pointer(&packetLen)),
+		uintptr(unsafe.Pointer(&addr)))
 
 	if success == 0 {
 		return nil, err
@@ -134,8 +134,8 @@ func (wd *WinDivertHandle) Send(packet *Packet) (uint, error) {
 	success, _, err := winDivertSend.Call(wd.handle,
 		uintptr(unsafe.Pointer(&(packet.Raw[0]))),
 		uintptr(packet.PacketLen),
-		uintptr(unsafe.Pointer(packet.Addr)),
-		uintptr(unsafe.Pointer(&sendLen)))
+		uintptr(unsafe.Pointer(&sendLen)),
+		uintptr(unsafe.Pointer(packet.Addr)))
 
 	if success == 0 {
 		return 0, err
@@ -156,12 +156,12 @@ func (wd *WinDivertHandle) HelperCalcChecksum(packet *Packet) {
 
 // Take the given filter and check if it contains any error
 // https://reqrypt.org/windivert-doc.html#divert_helper_check_filter
-func HelperCheckFilter(filter string) (bool, int) {
+func HelperCompileFilter(filter string) (bool, int) {
 	var errorPos uint
 
 	filterBytePtr, _ := syscall.BytePtrFromString(filter)
 
-	success, _, _ := winDivertHelperCheckFilter.Call(
+	success, _, _ := winDivertHelperCompileFilter.Call(
 		uintptr(unsafe.Pointer(filterBytePtr)),
 		uintptr(0),
 		uintptr(0), // Not implemented yet
@@ -184,7 +184,6 @@ func HelperEvalFilter(packet *Packet, filter string) (bool, error) {
 
 	success, _, err := winDivertHelperEvalFilter.Call(
 		uintptr(unsafe.Pointer(filterBytePtr)),
-		uintptr(0),
 		uintptr(unsafe.Pointer(&packet.Raw[0])),
 		uintptr(packet.PacketLen),
 		uintptr(unsafe.Pointer(&packet.Addr)))
