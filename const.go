@@ -16,6 +16,14 @@ const (
 	WinDivertFlagDebug uint8 = 1 << iota
 )
 
+const (
+	WINDIVERT_LAYER_NETWORK int = iota
+	WINDIVERT_LAYER_NETWORK_FORWARD
+	WINDIVERT_LAYER_FLOW
+	WINDIVERT_LAYER_SOCKET
+	WINDIVERT_LAYER_REFLECT
+)
+
 func (d Direction) String() string {
 	if bool(d) {
 		return "Inbound"
