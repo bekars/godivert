@@ -12,6 +12,7 @@ type WinDivertAddress struct {
 	Flags     uint64
 	IfIdx     uint32
 	SubIfIdx  uint32
+	_         [7]uint64
 }
 
 func (w *WinDivertAddress) String() string {
