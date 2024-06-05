@@ -1,4 +1,4 @@
-module github.com/NCDerek/godivert
+module github.com/bekars/godivert
 
-go 1.14
+go 1.18
 
